@@ -1,0 +1,4 @@
+name: Tournament
+main: com.mcpvp.tournament.TournamentPlugin
+version: 0.0.1
+authors: [HeathLoganCampbell]
