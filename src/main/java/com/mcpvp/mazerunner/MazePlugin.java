@@ -3,6 +3,7 @@ package com.mcpvp.mazerunner;
 import java.io.File;
 
 import org.bukkit.Bukkit;
+import org.bukkit.Location;
 import org.bukkit.World;
 import org.bukkit.configuration.file.FileConfiguration;
 
@@ -23,6 +24,8 @@ import com.mcpvp.mazerunner.maze.world.WorldGenerator;
 
 public class MazePlugin extends CustomPlugin
 {
+	private WorldGeneratorModule worldGenerator;
+	
 	@Override
 	public void onEnable()
 	{
@@ -35,18 +38,8 @@ public class MazePlugin extends CustomPlugin
 		
 		ClientModule clientModule = new ClientModule(this, betterEventModule, commandModule, requstManager);
 	
-		//Each tile should be 4 blocks so we can quickly divide
-		int mazeWidth = 200;
-		int mazeHeight = 200;
-		int teams = 4;
-		WorldGenerator maze = new WorldGenerator(mazeWidth, mazeHeight, teams);
-		byte[] tiles = maze.generate();
-		
-		WorldGeneratorModule worldGenerator = new WorldGeneratorModule(this, commandModule);
-		World world = worldGenerator.loadNewWorld("mazerunner" + File.separatorChar +"world", new MazeChunkGenerator(tiles, mazeWidth, mazeHeight));
-		world.setAllowSlime(false);
 		//		worldGenerator.generateWorld(world, 100, 64, 64, true);
-		
+		worldGenerator = new WorldGeneratorModule(this, commandModule);
 	}
 	
 	@Override
@@ -87,14 +80,21 @@ public class MazePlugin extends CustomPlugin
 	@CommandHandler(name = "demo", aliases = { "d" }, requiredRank = Rank.STAFF)
 	public void broadcastCmd(CommandArgs args) 
 	{
-		int worldIndex = 0;
-		if(args.length() > 0)
-			worldIndex = Integer.parseInt(args.getArgs(0));
-		if(worldIndex >= Bukkit.getWorlds().size())
+		worldGenerator.destroyWorld("mazerunner" + File.separatorChar +"world", false);
+
+		//Each tile should be 4 blocks so we can quickly divide
+		int mazeWidth = 200;
+		int mazeHeight = 200;
+		int teams = 4;
+		WorldGenerator maze = new WorldGenerator(mazeWidth, mazeHeight, teams);
+		byte[] tiles = maze.generate();
+	
+		World world = worldGenerator.loadNewWorld("mazerunner" + File.separatorChar +"world" + Math.random(), new MazeChunkGenerator(tiles, mazeWidth, mazeHeight));
+		world.setAllowSlime(false);
+		
+		Bukkit.getScheduler().scheduleSyncDelayedTask(this, () ->
 		{
-			args.getSender().sendMessage("Not enough worlds");
-			return;
-		}
-		args.getPlayer().teleport(Bukkit.getWorlds().get(worldIndex).getSpawnLocation());
+			args.getPlayer().teleport(new Location(world, 400, 100, 400));
+		}, 20 * 5);
 	}
 }
