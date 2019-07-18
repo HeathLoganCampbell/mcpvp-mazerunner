@@ -2,22 +2,24 @@ package com.mcpvp.mazerunner;
 
 import java.io.File;
 
-import org.bukkit.Location;
+import org.bukkit.Bukkit;
 import org.bukkit.World;
-import org.bukkit.block.Block;
 import org.bukkit.configuration.file.FileConfiguration;
 
 import com.mcpvp.heart.CustomPlugin;
 import com.mcpvp.heart.api.RequestManager;
 import com.mcpvp.heart.modules.betterevents.BetterEventModule;
 import com.mcpvp.heart.modules.client.ClientModule;
+import com.mcpvp.heart.modules.client.Rank;
 import com.mcpvp.heart.modules.command.CommandModule;
+import com.mcpvp.heart.modules.command.annotations.CommandHandler;
 import com.mcpvp.heart.modules.command.commands.BroadcastCommand;
-import com.mcpvp.heart.modules.joinquit.JoinQuitModule;
-import com.mcpvp.heart.modules.joinquit.Option;
+import com.mcpvp.heart.modules.command.types.CommandArgs;
 import com.mcpvp.heart.modules.ticker.TickerModule;
 import com.mcpvp.heart.modules.worldgenerator.WorldGeneratorModule;
 import com.mcpvp.heart.utils.Config;
+import com.mcpvp.mazerunner.maze.world.MazeChunkGenerator;
+import com.mcpvp.mazerunner.maze.world.WorldGenerator;
 
 public class MazePlugin extends CustomPlugin
 {
@@ -33,19 +35,14 @@ public class MazePlugin extends CustomPlugin
 		
 		ClientModule clientModule = new ClientModule(this, betterEventModule, commandModule, requstManager);
 	
-		JoinQuitModule joinQuitModule = new JoinQuitModule(this, commandModule, clientModule);
+		//Each tile should be 4 blocks so we can quickly divide
+//		WorldGenerator world = new WorldGenerator(width/3, height/3, glades);
+//		byte[] tiles = world.generate();
 		
 		WorldGeneratorModule worldGenerator = new WorldGeneratorModule(this, commandModule);
-		World world = worldGenerator.loadNewWorld("tournament" + File.separatorChar +"world");
-		worldGenerator.generateWorld(world, 100, 64, 64, true);
-		
-		joinQuitModule.addJoinOption(new Option("default.join", true, (client, player) ->  {
-			if(player.getWorld() == world) return;
-			Block highestBlock = world.getHighestBlockAt(0, 0);
-			double highestY = highestBlock.getY();
-			player.teleport(new Location(world, 0, highestY + 20, 0));
-			player.sendMessage(player.getWorld().getName());
-		}));
+		World world = worldGenerator.loadNewWorld("mazerunner" + File.separatorChar +"world", new MazeChunkGenerator());
+		world.setAllowSlime(false);
+		//		worldGenerator.generateWorld(world, 100, 64, 64, true);
 		
 	}
 	
@@ -79,6 +76,22 @@ public class MazePlugin extends CustomPlugin
 	{
 		CommandModule commandModule = new CommandModule(this);
 		commandModule.registerCommands(new BroadcastCommand());
+		commandModule.registerCommands(this);
 		return commandModule;
+		
+	}
+	
+	@CommandHandler(name = "demo", aliases = { "d" }, requiredRank = Rank.STAFF)
+	public void broadcastCmd(CommandArgs args) 
+	{
+		int worldIndex = 0;
+		if(args.length() > 0)
+			worldIndex = Integer.parseInt(args.getArgs(0));
+		if(worldIndex >= Bukkit.getWorlds().size())
+		{
+			args.getSender().sendMessage("Not enough worlds");
+			return;
+		}
+		args.getPlayer().teleport(Bukkit.getWorlds().get(worldIndex).getSpawnLocation());
 	}
 }

@@ -1,4 +1,4 @@
-package com.mcpvp.mazerunner.maze;
+package com.mcpvp.mazerunner.maze.world;
 
 import java.awt.Point;
 import java.util.ArrayList;

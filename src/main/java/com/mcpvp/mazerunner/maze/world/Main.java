@@ -1,4 +1,4 @@
-package com.mcpvp.mazerunner.maze;
+package com.mcpvp.mazerunner.maze.world;
 
 
 import java.awt.Image;
@@ -15,7 +15,7 @@ public class Main {
 			int w = 128 * 2;
 			int h = 128  * 2;
 
-			WorldGenerator world = new WorldGenerator(w, h, 4);
+			WorldGenerator world = new WorldGenerator(w, h, 8);
 			
 			byte[] tiles = world.generate();
 

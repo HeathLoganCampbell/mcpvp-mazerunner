@@ -1,4 +1,4 @@
-name: Tournament
-main: com.mcpvp.tournament.TournamentPlugin
+name: Maze
+main: com.mcpvp.mazerunner.MazePlugin
 version: 0.0.1
 authors: [HeathLoganCampbell]
