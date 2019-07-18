@@ -106,6 +106,7 @@ public class WorldGenerator {
 
 				if (tiles[stepPixel] == 0x00 || tiles[stepPixel] == 0x02)
 					continue;
+				
 				if (!isValidTile(tiles, new Point(stepX, stepY)))
 					violations += 3;
 
@@ -151,6 +152,8 @@ public class WorldGenerator {
 				if (!CIRCLE_SHAPE || (Math.sqrt((x - this.getWidth() / 2) * (x - this.getWidth() / 2)
 						+ (y - this.getHeight() / 2) * (y - this.getHeight() / 2)) < this.getWidth() / 7 * Math.PI))
 					tiles[pixelLoc] = 0x03;
+				else
+					tiles[pixelLoc] = 0x05;
 
 			}
 		}

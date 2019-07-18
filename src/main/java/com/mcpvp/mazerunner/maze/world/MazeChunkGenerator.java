@@ -36,6 +36,7 @@ public class MazeChunkGenerator extends ChunkGenerator
 		int blockX = chunkX * 16;
 		int blockZ = chunkZ * 16;
 		boolean inTile = false;
+		boolean inVoid = false;
 		
 		for (int x = 0; x < 16; x++) 
 		{
@@ -57,10 +58,18 @@ public class MazeChunkGenerator extends ChunkGenerator
 					byte tileType = this.tiles[tileX + (tileY * this.width)];
 					if(tileType == 0x03)
 					{
-						Bukkit.broadcastMessage(CC.bdRed + tileType );
 						chunkData.setRegion(x, 0, z, 
 											x + 1, 10, z + 1, 
 											Material.SMOOTH_BRICK);
+						
+					}
+					else if(tileType == 0x00)
+					{
+						chunkData.setBlock(x, 0, z, Material.COBBLESTONE);
+					}
+					else if(tileType == 0x05)
+					{
+						inVoid = true;
 					}
 				} catch(Exception e)
 				{
@@ -71,7 +80,8 @@ public class MazeChunkGenerator extends ChunkGenerator
 		}
 		
 		//floor
-		chunkData.setRegion(0, 0, 0, 16, 1, 16, inTile ? Material.BRICK : Material.COBBLESTONE);
+//		if(inTile && !inVoid)
+//			chunkData.setRegion(0, 0, 0, 16, 1, 16, Material.COBBLESTONE);
 		
 
 		return chunkData;
