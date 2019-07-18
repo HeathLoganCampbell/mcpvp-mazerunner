@@ -36,11 +36,14 @@ public class MazePlugin extends CustomPlugin
 		ClientModule clientModule = new ClientModule(this, betterEventModule, commandModule, requstManager);
 	
 		//Each tile should be 4 blocks so we can quickly divide
-//		WorldGenerator world = new WorldGenerator(width/3, height/3, glades);
-//		byte[] tiles = world.generate();
+		int mazeWidth = 200;
+		int mazeHeight = 200;
+		int teams = 4;
+		WorldGenerator maze = new WorldGenerator(mazeWidth, mazeHeight, teams);
+		byte[] tiles = maze.generate();
 		
 		WorldGeneratorModule worldGenerator = new WorldGeneratorModule(this, commandModule);
-		World world = worldGenerator.loadNewWorld("mazerunner" + File.separatorChar +"world", new MazeChunkGenerator());
+		World world = worldGenerator.loadNewWorld("mazerunner" + File.separatorChar +"world", new MazeChunkGenerator(tiles, mazeWidth, mazeHeight));
 		world.setAllowSlime(false);
 		//		worldGenerator.generateWorld(world, 100, 64, 64, true);
 		
