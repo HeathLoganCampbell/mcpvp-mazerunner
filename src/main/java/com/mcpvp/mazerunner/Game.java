@@ -1,14 +1,19 @@
 package com.mcpvp.mazerunner;
 
+import java.io.File;
 import java.util.HashSet;
+import java.util.Optional;
 import java.util.UUID;
 
 import org.bukkit.Bukkit;
+import org.bukkit.Location;
+import org.bukkit.World;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerJoinEvent;
 
+import com.mcpvp.heart.CustomPlugin;
 import com.mcpvp.heart.modules.betterevents.player.PlayerDisconnectEvent;
 import com.mcpvp.heart.modules.client.Rank;
 import com.mcpvp.heart.modules.command.annotations.CommandHandler;
@@ -21,14 +26,24 @@ import com.mcpvp.heart.modules.stages.event.StageChangeEvent;
 import com.mcpvp.heart.modules.stages.stages.StageBase;
 import com.mcpvp.heart.modules.ticker.UnitType;
 import com.mcpvp.heart.modules.ticker.UpdateEvent;
+import com.mcpvp.heart.modules.worldgenerator.WorldGeneratorModule;
+import com.mcpvp.mazerunner.maze.world.MazeChunkGenerator;
+import com.mcpvp.mazerunner.maze.world.WorldGenerator;
+
+import lombok.Getter;
 
 public class Game extends StageManager implements Listener
 {
-	private StageManager stageManager;
+	private @Getter String name;
+	private @Getter World world;
+	private @Getter CustomPlugin plugin;
 
-	public Game()
+	public Game(CustomPlugin plugin, String name, WorldGeneratorModule worldGenerator)
 	{
-		stageManager = new StageManager();
+		this.name = name;
+		this.plugin = plugin;
+		
+		this.plugin.registerListener(this);
 		
 		StageBase generateStage = new StageBase("Generating");
 		StageBase waitingStage = new StageBase("Waiting for players");
@@ -41,13 +56,13 @@ public class Game extends StageManager implements Listener
 		StageBase finishingStage = new StageBase("Finishing");
 		
 		//Condition trees
-		waitingStage.registerCondition(new ConditionPlayerCountReached(stageManager, countdownStage, 10, true));
+		waitingStage.registerCondition(new ConditionPlayerCountReached(this, countdownStage, 10, false));
 		
 		//player count falls below 10
-		countdownStage.registerCondition(new ConditionPlayerCountReached(stageManager, waitingStage, 10, false));
-		countdownStage.registerCondition(new ConditionTimed(stageManager, 60, teleportingStage));
+		countdownStage.registerCondition(new ConditionPlayerCountReached(this, waitingStage, 10, true));
+		countdownStage.registerCondition(new ConditionTimed(this, 10, teleportingStage));
 		
-		teleportingStage.registerCondition(new Condition(stageManager, liveStage)
+		teleportingStage.registerCondition(new Condition(this, liveStage)
 				{
 					@Override
 					public boolean isTriggered(HashSet<UUID> players)
@@ -57,11 +72,11 @@ public class Game extends StageManager implements Listener
 					}
 				});
 		
-		liveStage.registerCondition(new ConditionTimed(stageManager, 60 * 30, championStage));
-		liveStage.registerCondition(new ConditionPlayerCountReached(stageManager, championStage, 1, false));
+		liveStage.registerCondition(new ConditionTimed(this, 60 * 30, championStage));
+		liveStage.registerCondition(new ConditionPlayerCountReached(this, championStage, 1, true));
 		//detemine winner
 		
-		championStage.registerCondition(new ConditionTimed(stageManager, 20, finishingStage));
+		championStage.registerCondition(new ConditionTimed(this, 20, finishingStage));
 		//Kick all players
 		
 		// create linked list
@@ -73,14 +88,30 @@ public class Game extends StageManager implements Listener
 		liveStage.setNextStage(championStage);
 		championStage.setNextStage(finishingStage);
 		
-		this.setActiveStage(generateStage);
+		this.activeStage = generateStage;
+		
+		
+		worldGenerator.destroyWorld("mazerunner" + File.separatorChar +"world", false);
+
+		//Each tile should be 4 blocks so we can quickly divide
+		int mazeWidth = 110;
+		int mazeHeight = 110;
+		int teams = 4;
+		WorldGenerator maze = new WorldGenerator(mazeWidth, mazeHeight, teams);
+		byte[] tiles = maze.generate();
+	
+		world = worldGenerator.loadNewWorld("mazerunner" + File.separatorChar +"world" + Math.random(), new MazeChunkGenerator(tiles, mazeWidth, mazeHeight));
+		world.setAllowSlime(false);
+		
+		this.setActiveStage(this.getActiveStage().getNextStage());
 	}
 	
 	@EventHandler
 	public void onUpdate(UpdateEvent e)
 	{
+		
 		if(e.getType() != UnitType.SECOND) return;
-		this.stageManager.update();
+		this.update();
 	}
 	
 	@EventHandler
@@ -96,12 +127,15 @@ public class Game extends StageManager implements Listener
 		}
 		else if(e.getNextStage().getName().equalsIgnoreCase("Teleporting"))
 		{
-			this.stageManager.getPlayers().stream()
-										  .map(Bukkit::getPlayer)
-										  .filter(player -> player != null)
-										  .forEach(player -> {
-											  //Teleport to teams base
-										  });
+			this.getPlayers().stream()
+							  .map(Bukkit::getPlayer)
+							  .filter(player -> player != null)
+							  .forEach(player -> {
+								  player.teleport(new Location(this.world, 110 * 2, 100,  110 * 2));
+							  });
+			Bukkit.getScheduler().scheduleSyncDelayedTask(this.getPlugin(), () ->{
+				this.setActiveStage(this.getActiveStage().getNextStage());
+			}, 20L);
 		}
 		else if(e.getNextStage().getName().equalsIgnoreCase("Live"))
 		{
@@ -116,7 +150,7 @@ public class Game extends StageManager implements Listener
 		}
 		else if(e.getNextStage().getName().equalsIgnoreCase("Finishing"))
 		{
-			this.stageManager.getPlayers().stream()
+			this.getPlayers().stream()
 										  .map(Bukkit::getPlayer)
 										  .filter(player -> player != null)
 										  .forEach(player -> {
@@ -144,5 +178,19 @@ public class Game extends StageManager implements Listener
 	public void addFakePlayer(CommandArgs args) 
 	{
 		this.addPlayer(UUID.randomUUID());
+	}
+	
+	@CommandHandler(name = "game.debug.removeplayer", requiredRank = Rank.STAFF)
+	public void removeFakePlayer(CommandArgs args) 
+	{
+		Optional<Player> nonplayer = this.getPlayers().stream().map(Bukkit::getPlayer).filter(player -> !player.isOnline()).findFirst();
+		this.removePlayer(nonplayer.get().getUniqueId());
+	}
+	
+
+	@CommandHandler(name = "game.debug.setStage", requiredRank = Rank.STAFF)
+	public void onStage(CommandArgs args) 
+	{
+		this.activeStage = new StageBase("Ahey");
 	}
 }

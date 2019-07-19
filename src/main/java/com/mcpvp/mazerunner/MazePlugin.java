@@ -41,9 +41,8 @@ public class MazePlugin extends CustomPlugin
 		//		worldGenerator.generateWorld(world, 100, 64, 64, true);
 		worldGenerator = new WorldGeneratorModule(this, commandModule);
 		
-		Game game = new Game();
-		this.registerListener(game);
-		commandModule.registerCommand(game);
+		Game game = new Game(this, "Mazerunner game", worldGenerator);
+		commandModule.registerCommands(game);
 	}
 	
 	@Override

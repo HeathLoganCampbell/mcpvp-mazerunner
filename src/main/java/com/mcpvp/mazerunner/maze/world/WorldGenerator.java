@@ -71,8 +71,19 @@ public class WorldGenerator {
 			for (int y = 1; y < this.getHeight(); y++) {
 				int pixelLoc = x + (y * this.width);
 				if (((x % 2 == 1 && y % 2 == 0) || (x % 2 == 0 && y % 2 == 1)) && tiles[pixelLoc] == 0x03)
-					if (random.nextInt(100) < 2)
-						tiles[pixelLoc] = 0x00;
+					if (random.nextInt(100) < 10)
+					{
+						boolean basesAround = false;
+						for (Point nextPossibleTile : new Point[] { new Point(0, 2), new Point(0, -2), new Point(2, 0), new Point(-2, 0) })
+						{
+							int nextPixelLoc = (int) (x + nextPossibleTile.getX() + ((y + nextPossibleTile.getY()) * this.width));
+							if(nextPixelLoc == 0x02 || nextPixelLoc == 0x04 ||  nextPixelLoc == 0x05)
+								basesAround = true;
+						}
+						
+						if(!basesAround)
+							tiles[pixelLoc] = 0x00;
+					}
 
 			}
 		}
@@ -177,6 +188,13 @@ public class WorldGenerator {
 		generateMazeHoles(tiles);
 		generateFeast(tiles);
 
+		//re render team bases
+		for (int i = 0; i < this.glades.size(); i++) {
+			Glade glade = this.glades.get(i);
+			glade.render(tiles, getWidth(), getHeight());
+		}
+
+		
 		for (int i = 0; i < this.glades.size(); i++) {
 			Glade glade = this.glades.get(i);
 			glade.clearExits(tiles, width, height);
@@ -242,6 +260,12 @@ public class WorldGenerator {
 		}
 
 		public void render(byte[] pixels, int width, int height) {
+			for (int x = startX - 1; x < endX + 1; x++) {
+				for (int y = startY - 1; y < endY + 1; y++) {
+					pixels[location.x + x + ((location.y + y) * width)] = 0x03;
+				}
+			}
+			
 			for (int x = startX; x < endX; x++) {
 				for (int y = startY; y < endY; y++) {
 					pixels[location.x + x + ((location.y + y) * width)] = 0x02;

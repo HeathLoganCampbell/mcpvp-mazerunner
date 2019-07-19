@@ -26,7 +26,7 @@ public class Main {
 					int i = x + y * w;
 
 //					if (tiles[i] == 0x01) pixels[i] = 0x0000FF; //air 0x00
-					if (tiles[i] == 0x02) pixels[i] = 0xffffff;
+					if (tiles[i] == 0x02) pixels[i] = 0xffffff; //teams base
 					if (tiles[i] == 0x03) pixels[i] = 0xa0a0a0; //wall
 					if (tiles[i] == 0x04) pixels[i] = 0xff2020; //exits
 					if (tiles[i] == 0x05) pixels[i] = 0x00FF00; //void
